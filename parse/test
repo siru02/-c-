@@ -1,0 +1,26 @@
+
+while (token)
+{
+	if (token->type == -1) //아직 타입이 지정되지 않은 경우 
+	{
+		if (check_cmd(token->value) == true) //명령어이면 check_cmd의 방법은 더 연구가 필요하다
+		{
+			token->type = command;
+			token = token->next; //다음토큰으로 넘어간다
+			while (token && token->type != space)
+				token = token->next;
+			if (token->type == redirections) //다음 토큰이 리다이렉션이면
+				continue;			
+			else if (check_option(token->value) == true) //다음 토큰이 리다이렉션이 아니고 옵션이면
+				token->type = option;
+			else
+				token->type = filename;
+		}
+		else //cmd가 아닌경우
+		{
+
+		}
+	}
+	token = token->next;
+}
+앞의 token이 명령어이면 바로 뒤의 token은 redirection이 아니면 옵션이나 파일이름이 된다

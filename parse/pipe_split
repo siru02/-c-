@@ -1,0 +1,131 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    pipe_split                                         :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: hgu <hgu@student.42.fr>                    +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2023/03/27 13:32:17 by hyuim             #+#    #+#              #
+#    Updated: 2023/10/05 15:22:22 by hgu              ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+#include "../../libft/libft.h"
+
+static unsigned int	word_cnt(char *s, char c);
+static char			*split_str(char *s, int end, char **ret, int ret_idx);
+static void			put_split(char **ret, char *s, char c, int i);
+
+int	jump_quote(char *s, int idx)
+{ //따옴표가 끝나지 않으면 NULL을 보낸다?, 닫히지 않은 quote를 처리하지 않아도 된다
+	if (s[idx] == 34) //순회중에 작은 따옴표를 찾으면
+	{
+		printf("idx : %d\n", idx);
+		while (s[idx + 1] && s[idx + 1] != 34) //무지성 인덱스 증가
+			idx++;
+	}
+	if (s[idx] == 39) //순회중에 큰 따옴표를 찾으면 
+	{
+		printf("idx : %d\n", idx);
+		while (s[idx + 1] && s[idx + 1] != 39) //무지성 인덱스 증가
+			idx++;
+	}
+	// if (s[idx + 1] == 39 || s[idx + 1] == 34) //s[idx + 1]이 따옴표이면
+	// {	
+	// 	idx++;
+	// 	printf("2idx : %d\n", idx);
+	// }
+	return (idx);
+}
+
+char	**ft_split(char *s, char c)
+{
+	int		cnt;
+	char	**ret;
+
+	cnt = word_cnt(s, c); //여기까지 동작
+	ret = (char **)malloc((cnt + 1) * sizeof(char *));
+	if (!ret)
+		return (NULL);
+	*(ret + cnt) = NULL; //o
+	put_split(ret, s, c, 0); //o
+	if (cnt == 0)
+		return (ret);
+	if (!*ret)
+	{
+		free(ret);
+		return (0);
+	}
+	return (ret);
+}
+
+static char	*split_str(char *s, int end, char **ret, int ret_idx)
+{
+	char	*spl;
+	int		i;
+
+	i = 0;
+	spl = (char *)malloc((end + 2) * sizeof(char));
+	if (!spl)
+	{
+		while (ret_idx--)
+		{
+			free(*(ret + ret_idx));
+			*(ret + ret_idx) = NULL;
+		}
+		return (NULL);
+	}
+	*(spl + (end + 1)) = 0;
+	while (i <= end)
+	{
+		*(spl + i) = *(s + i);
+		i++;
+	}
+	return (spl);
+}
+
+static void	put_split(char **ret, char *s, char c, int i)
+{
+	int	end;
+
+	end = 0;
+	while (*s)
+	{
+		if (*s == c && end == 0) //첫 문자부터 구분자가 들어온경우
+		{
+			s++;
+			continue ;
+		}
+		if (s[end] == 34 || s[end] == 39)
+			end = jump_quote(s, end);
+		if (*(s + end) != c && (*(s + end + 1) == c || *(s + end + 1) == 0)) //s[end]가 구분자가아니고
+		{
+			*(ret + i) = split_str(s, end, ret, i);
+			if (*(ret + i) == NULL)
+				return ;
+			i++;
+			s = s + end + 1; //s는 split할 각 문자열의 시작주소를 저장한다
+			end = 0;
+			continue ;
+		}
+		end++; //가 idx가 된다
+	}
+}
+
+static unsigned int	word_cnt(char *s, char c)
+{
+	unsigned int	cnt;
+	int				idx;
+
+	cnt = 0;
+	idx = -1;
+	while (s[++idx])
+	{
+		if (s[idx] == 34 || s[idx] == 39 || s[idx] == )
+			idx = jump_quote(s, idx);
+		if (s[idx] != c && (s[idx + 1] == c || s[idx] == 0))//따옴표 밖에서 split기준 문자를 만나면
+			cnt++;
+	}
+	printf("cnt : %d\n", cnt);
+	return (cnt + 1);
+}
