@@ -6,7 +6,7 @@
 /*   By: hgu <hgu@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/01 16:18:40 by hgu               #+#    #+#             */
-/*   Updated: 2023/10/09 21:23:32 by hgu              ###   ########.fr       */
+/*   Updated: 2023/10/12 15:19:59 by hgu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,46 @@ void	check_leak(void)
 {
 	system("leaks a.out");
 }
+
+void	print_simple_cmd(t_simple_cmd *node)
+{
+	printf("simple_cmd\n\n");
+	printf("cmd : %s\n",node->cmd_path);
+	for (int i = 0 ; i< node->argv_cnt; i++)
+		printf("argv %d : %s\n",i,node->cmd_argv[i]);
+	printf("\n\n");
+}
+
+void 	print_redirect_s(t_redirect_s *node)
+{
+	printf("redirect_s\n\n");
+	if (node->redirect)
+		printf("type : %d, file : %s\n", node->redirect->type, node->redirect->filename);
+	if (node->redirect_s)
+		print_redirect_s(node->redirect_s);
+	printf("\n\n");
+}
+
+void	print_cmd(t_cmd *node)
+{
+	printf("cmd\n\n");
+	if (node->redirect_s)
+		print_redirect_s(node->redirect_s);
+	if (node->simple_cmd)
+		print_simple_cmd(node->simple_cmd);
+	printf("\n\n");
+}
+
+void	print_tree(t_pipe *node)
+{
+	printf("pipe\n\n");
+	if (node->cmd != NULL)
+		print_cmd(node->cmd);
+	if (node->pipe != NULL)
+		print_tree(node->pipe);
+	printf("\n\n");
+}
+
 
 t_token	*free_all_token(t_token *token_head)
 {
@@ -33,28 +73,28 @@ t_token	*free_all_token(t_token *token_head)
 	return (NULL);
 }
 
-void	make_token(char *str, int len, int type, t_token *head)
+void	make_token(char *str, int len, int type, t_token **head)
 {
-	t_token	*new;
-	int		idx;//
+	t_token	*new; //새로 만들 토큰
+	t_token	*tmp; //헤드순회에 쓰일임시 변수
+	int		idx; 
 
-	if (head->value == NULL) //head가 비어있으면
-		new = head; //new가 헤드가 된다
-	else //head에 원소가 있으면 new를 말록해서 뒤에 이어붙인다
+	new = malloc(sizeof(t_token)); //새로만들 토큰을 말록해준다
+	new->next = NULL; //new의 next는 NULL이다
+	new->type = type; //새로만든 노드의 타입지정
+	if (*head == NULL) //head가 비어있으면
 	{
-		new = malloc(sizeof(t_token));
-		while (head->next != NULL)
-			head = head->next;
-		head->next = new;
+		*head = new; //새로만든 노드를 헤드에 할당한다
+		(*head)->value = NULL; //헤드의 value는 NULL이고
+		return ; //헤드인경우 종료
 	}
-	new->type = type;
-	new->next = NULL;
-	new->value = malloc(sizeof(len + 2)); //새로운 토큰의 문자열
-	idx = -1;//
-	while (++idx < len + 1)
-		new->value[idx] = str[idx];
-	//ft_strlcpy(new->value, str, len + 2); //len은 복사할 문자의 idx이므로 \0까지 생각해서 len + 2
-	new->value[len + 1] = '\0';
+	tmp = *head;
+	while (tmp->next != NULL) //tmp->next == NULL일때까지 tmp순회
+		tmp = tmp->next;
+	tmp->next = new; //새로만든 노드를 붙인다
+	new->value = malloc(sizeof(char) * (len + 2)); //새로운 토큰의 문자열
+	idx = -1;
+	ft_strlcpy(new->value, str, len + 2); //len은 복사할 문자의 idx이므로 \0까지 생각해서 len + 2
 	printf("type : %d len :%d new : %s\n",type, len, new->value);
 }
 
@@ -108,7 +148,7 @@ int	jump_quote(char *s, int idx)
 	return (idx + 1); // quote나 \0을 가리키는 인덱스를 반환한다
 }
 
- //현재 오류가 있음
+ //현재 오류가 있음 -> "|의 형태에서 "가 삭제된다
 t_token	*tokenize(char *str)
 {
 	int		type; //각  token의 type값으로 -1이면 덩어리 멤버
@@ -116,8 +156,8 @@ t_token	*tokenize(char *str)
 	t_token	*token_head;
 
 	len = -1;
-	token_head = malloc(sizeof(t_token));
-	token_head->value = NULL;
+	token_head = NULL;
+	make_token(NULL, 0, PIPE, &token_head);
 	while (*(str + ++len))//len은 실제 구분자 길이보다 1 짧다
 	{
 		type = check_ch_is_token(str + len);
@@ -134,13 +174,13 @@ t_token	*tokenize(char *str)
 		{
 			if (type == REDIR_TWO_LEFT || type == REDIR_TWO_RIGHT)//>>, <<의 경우
 				len++; //길이를 하나 더 늘려준다
-			make_token(str, len, type, token_head);
+			make_token(str, len, type, &token_head);
 			str = str + len + 1;
 			len = -1;
 		}
 	}
 	if (type != WHITE_SPACE && len != 0)
-		make_token(str, --len, type, token_head);
+		make_token(str, --len, type, &token_head);
 	return (token_head);
 }
 
@@ -148,7 +188,8 @@ int main()
 {
 	t_token	*head;
 	t_token	*tmp;
-	t_token *to_free;
+	//t_token *to_free;
+	t_pipe	*root;
 	char	*ret;
 
 	//atexit(check_leak);
@@ -159,19 +200,28 @@ int main()
 		tmp = head;
 		if (head == NULL)
 			printf("successfully freed\n");
-		// else
-		// 	tmp = syntax_analyze(head);
-		printf("여기까지 동작\n");
-		while (tmp != NULL)
+		else
+			tmp = syntax_analyze(head);
+		if (tmp == NULL)
 		{
-			printf("type : %d len : %zu new : %s\n",tmp->type,ft_strlen(tmp->value), tmp->value);
-			write (1, tmp->value, ft_strlen(tmp->value));
-			write (1, "\n", 1);
-			to_free = tmp;
-			tmp = tmp->next;
-			free(to_free->value);
-			free(to_free);
+			printf("syntax error\n");
+			free(ret);
+			continue;
 		}
+		printf("여기까지 동작 : syntax OK\n");
+		root = make_tree(head);
+		print_tree(root);
+		// while (tmp != NULL)
+		// {
+		// 	printf("type : %d len : %zu new : %s\n",tmp->type,ft_strlen(tmp->value), tmp->value);
+		// 	// write (1, tmp->value, ft_strlen(tmp->value));
+		// 	// write (1, "\n", 1);
+		// 	to_free = tmp;
+		// 	tmp = tmp->next;
+		// 	free(to_free->value);
+		// 	free(to_free);
+		// }
+		printf("여기오냐?\n");
 		free(ret);
 		// return(0);
 	}
