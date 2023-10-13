@@ -6,7 +6,7 @@
 /*   By: hgu <hgu@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:50:39 by hgu               #+#    #+#             */
-/*   Updated: 2023/10/12 15:21:05 by hgu              ###   ########.fr       */
+/*   Updated: 2023/10/13 22:22:55 by hgu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,22 +21,24 @@ int	syntax_error(char *str)  //출력할 오류문구를 입력받아 출력하�
 }
 
 //각 파이프마다 첫 토큰은 명령어나 리다이렉션만 올 수 있으므로, word인 경우 command로 타입을 변경해줌
-int	syntax_first_token(t_token *first)
-{
-	if (first == NULL) //빈토큰이면
+int	syntax_first_token(t_token *first, int cnt)
+{ //cnt는 0이면 헤드토큰임을 의미한다
+	if (cnt == 0 && first->next == NULL) //헤드 토큰 = pipe, 다음 토큰 비어있음
+		return (1); //정상이고 1반환 아무것도 실행하지않음
+	else if (cnt == 0 && first->next->type == PIPE)
 		return (syntax_error("|"));
-	if (first->type >= REDIR_LEFT && first->type <= REDIR_TWO_RIGHT) //첫 커맨드가 리다이렉션이면 정상적인 경우이다
+	// else if (first->type == -1) //word는 cmd, filename, option으로 분류되는데 첫커맨드가 리다이렉션이 아니면 항상 cmd로 인식한다
+	// {
+	// 	first->type = COMMAND;
+	// 	return (1);
+	// }
+	if (first->next == NULL) //2번째 파이프부터 파이프 -> NULL의 꼴이면
+		return (syntax_error("|"));
+	else if (first->next->type == -1) //다음이 word이면
+		return (1);//정상
+	else if (first->next->type >= REDIR_LEFT && first->next->type <= REDIR_TWO_RIGHT) //다음이 리다이렉트이면 정상
 		return (1);
-	else if (first->type == -1) //word는 cmd, filename, option으로 분류되는데 첫커맨드가 리다이렉션이 아니면 항상 cmd로 인식한다
-	{
-		first->type = COMMAND;
-		return (1);
-	}
-	else if (first->type == PIPE)
-		return (syntax_error("||"));
-	else if (first->type >= REDIR_LEFT && first->type <= REDIR_TWO_RIGHT) //first의 타입이 리다이렉션인경우
-		return (1); //정상적인 경우 
-	return (syntax_error(first->value)); //임시로 첫 인자가 word거나 리다이렉션이 아닌경우 에러로 리턴한다
+	return (syntax_error(first->next->value)); //임시로 첫 인자가 word거나 리다이렉션이 아닌경우 에러로 리턴한다
 }
 int	syntax_redirection(t_token *token)
 { //현재토큰이 리다이렉션인경우 바로 다음에 word타입이 와야한다
@@ -65,21 +67,23 @@ int	syntax_redirection(t_token *token)
 t_token	*syntax_analyze(t_token *token_head)
 {//첫 파이프가 나오기이전은 처음부터 읽지만 파이프만난 이후는 파이프 이후부터 읽는 문제가 있다
 	t_token	*tmp;
+	int		cnt;
 
 	tmp = token_head; //토큰의 헤드는 pipe타입이다
+	cnt = 0;
 	while (tmp != NULL)
 	{
-		tmp = tmp->next; //파이프로 잘린노드의 다음 노드부터 검사하므로
-		if (syntax_first_token(tmp) == -1)//매 파이프마다 첫 토큰은 리다이렉션과 명령어만 올 수 있다
+		if (syntax_first_token(tmp, cnt++) == -1)//매 파이프마다 첫 토큰은 리다이렉션과 명령어만 올 수 있다
 			return (free_all_token(token_head));
-		while(tmp->type != PIPE) //현재 토큰의 타입이 파이프가 아닌동안 의미를 부여한다 //pipe나 NULL에서 탈출
+		tmp = tmp->next; //파이프로 잘린노드의 다음 노드부터 검사하므로
+		while(tmp != NULL) //현재 토큰의 타입이 파이프가 아닌동안 의미를 부여한다 //pipe나 NULL에서 탈출
 		{
+			if (tmp->type == PIPE)
+				break;
 			if (syntax_redirection(tmp) == -1) //tmp의 type이 redirection인 경우 문법검사를 수행한다
 				return (free_all_token(token_head));
 			printf("tokenized str : %s\n",tmp->value);
-			tmp = tmp->next;
-			if (tmp == NULL)
-				break;
+			tmp = tmp->next; //tmp == NULL 이거나 tmp->type == PIPE에서 탈출
 		}
 	}
 	return (token_head); //문제없는 경우는 원래 토큰의 head를 리턴한다

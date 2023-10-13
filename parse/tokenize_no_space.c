@@ -6,7 +6,7 @@
 /*   By: hgu <hgu@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/01 16:18:40 by hgu               #+#    #+#             */
-/*   Updated: 2023/10/12 15:19:59 by hgu              ###   ########.fr       */
+/*   Updated: 2023/10/13 22:21:30 by hgu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,13 +46,13 @@ void	print_cmd(t_cmd *node)
 	printf("\n\n");
 }
 
-void	print_tree(t_pipe *node)
+void	print_tree(t_pipe *node, t_bundle *bundle)
 {
-	printf("pipe\n\n");
+	printf("pipe -> cmd = %d\n\n",bundle->cmd_cnt);
 	if (node->cmd != NULL)
 		print_cmd(node->cmd);
 	if (node->pipe != NULL)
-		print_tree(node->pipe);
+		print_tree(node->pipe, bundle);
 	printf("\n\n");
 }
 
@@ -191,10 +191,13 @@ int main()
 	//t_token *to_free;
 	t_pipe	*root;
 	char	*ret;
+	t_bundle *bundle;
 
 	//atexit(check_leak);
+	bundle = malloc(sizeof(t_bundle));
 	while (1)
 	{
+		bundle->cmd_cnt = 0;
 		ret = readline("hgu hi : ");
 		head = tokenize(ret);
 		tmp = head;
@@ -209,8 +212,8 @@ int main()
 			continue;
 		}
 		printf("여기까지 동작 : syntax OK\n");
-		root = make_tree(head);
-		print_tree(root);
+		root = make_tree(head, bundle);
+		print_tree(root, bundle);
 		// while (tmp != NULL)
 		// {
 		// 	printf("type : %d len : %zu new : %s\n",tmp->type,ft_strlen(tmp->value), tmp->value);

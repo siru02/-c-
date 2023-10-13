@@ -6,7 +6,7 @@
 /*   By: hgu <hgu@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/11 19:25:06 by hgu               #+#    #+#             */
-/*   Updated: 2023/10/12 15:38:23 by hgu              ###   ########.fr       */
+/*   Updated: 2023/10/13 22:20:14 by hgu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,14 +24,17 @@ void	copy_strings(char **new, char **old, int cnt)
 	}
 }
 
-void	make_simple_cmd(t_cmd *cmd, t_token *token)
+void	make_simple_cmd(t_cmd *cmd, t_token *token, t_bundle *bundle)
 { //cmd_argv는 char**형식이다 //simple_cmd의 argv에 값을 이어붙인다
 	t_simple_cmd	*tmp;
 	char			**new_argv;
 
 	tmp = cmd->simple_cmd;
 	if (tmp->cmd_path == NULL) //명령어 저장부분이 비어있다면
+	{
 		tmp->cmd_path = token->value; //명령어를 추가해준다
+		bundle->cmd_cnt++;
+	}
 	tmp->argv_cnt += 1;
 	new_argv = malloc(sizeof(char *) * (tmp->argv_cnt + 1)); //새로운 2차원배열 만들어준다
 	copy_strings(new_argv, tmp->cmd_argv, tmp->argv_cnt - 1);
@@ -94,7 +97,7 @@ void	make_redirect_s(t_redirect_s **head, t_token *token)
 	}
 }
 
-t_pipe	*make_tree(t_token *token_head)
+t_pipe	*make_tree(t_token *token_head, t_bundle *bundle)
 {
 	t_token	*tmp; //토큰순회
 	t_pipe	*pipe_head; //파이프루트저장
@@ -115,8 +118,8 @@ t_pipe	*make_tree(t_token *token_head)
 			make_redirect_s(&(pipe->cmd->redirect_s), tmp); //syntax단계에서 리다이렉션뒤에는 파일이름이 있는지 검사하므로
 			tmp = tmp->next; //다음토큰으로 넘긴다
 		}
-		else
-			make_simple_cmd(pipe->cmd, tmp);//커맨드를 한번 받았으면 이후로는 argv에넣어야한다
+		else //나머지 word의 경우
+			make_simple_cmd(pipe->cmd, tmp, bundle);//커맨드를 한번 받았으면 이후로는 argv에넣어야한다
 		tmp = tmp->next; //다음 토큰으로
 	}
 	return (pipe_head);
