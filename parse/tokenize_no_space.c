@@ -6,7 +6,7 @@
 /*   By: hgu <hgu@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/01 16:18:40 by hgu               #+#    #+#             */
-/*   Updated: 2023/10/13 22:21:30 by hgu              ###   ########.fr       */
+/*   Updated: 2023/10/30 21:52:09 by hgu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -212,6 +212,8 @@ int main()
 			continue;
 		}
 		printf("여기까지 동작 : syntax OK\n");
+		expansion(head, bundle);
+		printf("expansion test \n");
 		root = make_tree(head, bundle);
 		print_tree(root, bundle);
 		// while (tmp != NULL)
