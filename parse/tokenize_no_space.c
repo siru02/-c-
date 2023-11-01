@@ -6,7 +6,7 @@
 /*   By: hgu <hgu@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/01 16:18:40 by hgu               #+#    #+#             */
-/*   Updated: 2023/10/30 21:52:09 by hgu              ###   ########.fr       */
+/*   Updated: 2023/11/01 23:30:47 by hgu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,8 +193,16 @@ int main()
 	char	*ret;
 	t_bundle *bundle;
 
+	char **envp;
+
+	envp = malloc(sizeof(char *) * 4);
+	envp[0] = "USER=hgu";
+	envp[1] = "seoul=forty_two";
+	envp[2] = "test=hyuim";
+	envp[3] = NULL;
 	//atexit(check_leak);
 	bundle = malloc(sizeof(t_bundle));
+	bundle->envp = (char **)envp;
 	while (1)
 	{
 		bundle->cmd_cnt = 0;

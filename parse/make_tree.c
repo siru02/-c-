@@ -6,7 +6,7 @@
 /*   By: hgu <hgu@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/11 19:25:06 by hgu               #+#    #+#             */
-/*   Updated: 2023/10/13 22:20:14 by hgu              ###   ########.fr       */
+/*   Updated: 2023/11/01 21:07:59 by hgu              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ void	copy_strings(char **new, char **old, int cnt)
 	idx = 0;
 	while (idx < cnt)
 	{
-		new[idx] = old[idx];
+		new[idx] = old[idx]; //원래 토큰에 있던 주소만 복사하므로
 		idx++;
 	}
 }
@@ -35,10 +35,11 @@ void	make_simple_cmd(t_cmd *cmd, t_token *token, t_bundle *bundle)
 		tmp->cmd_path = token->value; //명령어를 추가해준다
 		bundle->cmd_cnt++;
 	}
+	//argv에는 모든걸 넣어줘야한다
 	tmp->argv_cnt += 1;
-	new_argv = malloc(sizeof(char *) * (tmp->argv_cnt + 1)); //새로운 2차원배열 만들어준다
-	copy_strings(new_argv, tmp->cmd_argv, tmp->argv_cnt - 1);
-	free(tmp->cmd_argv);
+	new_argv = malloc(sizeof(char *) * (tmp->argv_cnt + 1)); //cmd_argv는 문자열 배열이므로 새로운 2차원배열 만들어준다
+	copy_strings(new_argv, tmp->cmd_argv, tmp->argv_cnt - 1); //new_argv에 기존cmd_argv를 카피한다
+	free(tmp->cmd_argv); //기존 cmd_argv를 프리한다
 	tmp->cmd_argv = new_argv;
 	tmp->cmd_argv[tmp->argv_cnt] = NULL;
 	tmp->cmd_argv[tmp->argv_cnt - 1] = token->value;
